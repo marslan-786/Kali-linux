@@ -1,35 +1,44 @@
-# 1. Base Image: Official Kali Linux
+# Base Image: Official Kali Linux
 FROM kalilinux/kali-rolling
 
-# 2. Non-interactive mode (تاکہ انسٹالیشن کے دوران سوال نہ پوچھے)
+# Non-interactive mode
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 3. Update & Install Basic Tools (Node.js سرور چلانے کے لیے چاہیے)
+# --- JUGAAD AREA: Install EVERYTHING here ---
+# جو ٹول آپ کو چاہیے، اس لسٹ میں اس کا نام لکھ دیں۔
+# یہ پرماننٹ ہو جائے گا۔
 RUN apt-get update && apt-get install -y \
     curl \
     git \
+    wget \
     python3 \
     python3-pip \
     nodejs \
     npm \
     nano \
-    wget \
-    build-essential \
+    vim \
+    zip \
+    unzip \
     net-tools \
-    # کالی کے مشہور ٹولز (آپ اپنی مرضی سے اور بھی لکھ سکتے ہیں)
+    iputils-ping \
     nmap \
     sqlmap \
-    && apt-get clean
+    dnsutils \
+    whois \
+    htop \
+    neofetch \
+    # اگر اور کوئی ٹول چاہیے تو یہاں اسپیس دے کر لکھ دیں
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 4. Set Working Directory
-WORKDIR /root/terminal-server
+# Working Directory
+WORKDIR /root
 
-# 5. Copy Files
+# Copy Project Files
 COPY package.json .
 RUN npm install
 
 COPY . .
 
-# 6. Port & Start
+# Port
 ENV PORT=3000
 CMD ["node", "index.js"]
