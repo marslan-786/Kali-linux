@@ -11,7 +11,7 @@
             background: #000; 
             height: 100vh;
             overflow: hidden;
-            touch-action: none; /* Prevents default mobile zooming */
+            touch-action: none; 
         }
         
         #terminal { 
@@ -19,17 +19,17 @@
             height: 100%; 
         }
 
-        /* Floating Buttons Style */
+        /* SMALLER Floating Buttons */
         .float-btn {
             position: fixed;
-            bottom: 30px;
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.15); /* Semi-transparent */
+            bottom: 20px;       /* تھوڑا نیچے کیا ہے */
+            width: 30px;        /* پہلے 60px تھا، اب 30px (آدھا) */
+            height: 30px;       /* پہلے 60px تھا، اب 30px (آدھا) */
+            background: rgba(255, 255, 255, 0.15); 
             color: #00ff00;
-            border: 2px solid #00ff00;
+            border: 1px solid #00ff00; /* بارڈر بھی باریک کیا ہے */
             border-radius: 50%;
-            font-size: 30px;
+            font-size: 16px;    /* فونٹ بھی چھوٹا کیا ہے */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -44,24 +44,24 @@
         }
 
         /* Positions */
-        #btn-minus { left: 20px; }
-        #btn-plus { right: 20px; }
+        #btn-minus { left: 15px; }
+        #btn-plus { right: 15px; }
 
-        /* Toast Notification for Copy */
+        /* Toast Notification */
         #toast {
             visibility: hidden;
-            min-width: 250px;
+            min-width: 200px;
             background-color: #333;
             color: #fff;
             text-align: center;
             border-radius: 2px;
-            padding: 16px;
+            padding: 10px;
             position: fixed;
             z-index: 1;
             left: 50%;
             bottom: 50%;
             transform: translate(-50%, 50%);
-            font-size: 17px;
+            font-size: 14px;
             border: 1px solid #00ff00;
         }
 
@@ -109,7 +109,7 @@
         term.open(document.getElementById('terminal'));
         fitAddon.fit();
 
-        // --- Zoom Logic ---
+        // Zoom Logic
         function changeFontSize(amount) {
             currentFontSize += amount;
             if (currentFontSize < 6) currentFontSize = 6;
@@ -119,21 +119,18 @@
             socket.emit('resize', { cols: term.cols, rows: term.rows });
         }
 
-        // --- Long Press Logic (Jugaad for Copy) ---
+        // Long Press Copy Logic
         let pressTimer;
         const terminalDiv = document.getElementById('terminal');
 
-        // Touch start triggers timer
         terminalDiv.addEventListener('touchstart', (e) => {
-            // Only trigger if one finger is used (to allow scrolling/pinching)
             if (e.touches.length === 1) {
                 pressTimer = setTimeout(() => {
                     copyAll();
-                }, 800); // 800ms hold time
+                }, 800);
             }
         });
 
-        // Cancel timer if finger moves or lifts
         terminalDiv.addEventListener('touchend', () => clearTimeout(pressTimer));
         terminalDiv.addEventListener('touchmove', () => clearTimeout(pressTimer));
 
@@ -142,7 +139,7 @@
             const text = term.getSelection();
             navigator.clipboard.writeText(text).then(() => {
                 showToast();
-                term.clearSelection(); // Unselect after copy
+                term.clearSelection();
             }).catch(err => console.error('Copy failed', err));
         }
 
@@ -152,7 +149,7 @@
             setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
         }
 
-        // --- Socket Logic ---
+        // Socket Logic
         term.onData(data => socket.emit('input', data));
         socket.on('output', data => term.write(data));
 
