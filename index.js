@@ -10,35 +10,34 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, 'public')));
 
 io.on('connection', (socket) => {
-    console.log("New Session Started");
-
-    // Use bash directly
+    // Start Bash directly in /root
     const shell = 'bash'; 
     
+    // PTY Process Creation
     const term = pty.spawn(shell, [], {
         name: 'xterm-256color',
         cols: 80,
         rows: 24,
-        cwd: '/root', // Volume will be mounted here
+        cwd: '/root',
         env: process.env
     });
 
-    // Send data to client
+    // Handle Data
     term.on('data', (data) => socket.emit('output', data));
-    
-    // Receive input
     socket.on('input', (data) => term.write(data));
     
+    // Resize Handler
     socket.on('resize', (size) => {
         if (term) term.resize(size.cols, size.rows);
     });
 
     socket.on('disconnect', () => {
-        term.kill();
-        console.log("Session Ended");
+        try {
+            term.kill();
+        } catch(e) {}
     });
 });
 
 http.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+    console.log(`Listening on port ${PORT}`);
 });
