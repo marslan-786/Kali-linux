@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kali Linux Web</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+    <style>
+        body { 
+            margin: 0; 
+            background: #0d0d0d; /* Kali Dark BG */
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #terminal { 
+            width: 98%; 
+            height: 98%; 
+        }
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+    </style>
+</head>
+<body>
+    <div id="terminal"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links/lib/xterm-addon-web-links.js"></script>
+
+    <script>
+        const socket = io();
+        
+        // Kali Theme Colors
+        const term = new Terminal({
+            cursorBlink: true,
+            fontSize: 15,
+            fontFamily: '"Fira Code", monospace',
+            theme: {
+                background: '#0a0a0a',
+                foreground: '#f8f8f2',
+                cursor: '#ff0000', // Red Cursor like Kali
+                selection: '#44475a',
+                black: '#21222c',
+                red: '#ff5555',
+                green: '#50fa7b',
+                yellow: '#f1fa8c',
+                blue: '#bd93f9',
+                magenta: '#ff79c6',
+                cyan: '#8be9fd',
+                white: '#f8f8f2'
+            }
+        });
+
+        const fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+        term.loadAddon(new window.WebLinksAddon.WebLinksAddon());
+        
+        term.open(document.getElementById('terminal'));
+        fitAddon.fit();
+
+        term.onData(data => socket.emit('input', data));
+        socket.on('output', data => term.write(data));
+
+        window.addEventListener('resize', () => {
+            fitAddon.fit();
+            socket.emit('resize', { cols: term.cols, rows: term.rows });
+        });
+    </script>
+</body>
+</html>
