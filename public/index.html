@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kali Web Terminal</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="apple-touch-icon" href="/icon.png">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
     <style>
         body { 
@@ -19,17 +27,17 @@
             height: 100%; 
         }
 
-        /* SMALLER Floating Buttons */
+        /* SMALL Buttons (30px) */
         .float-btn {
             position: fixed;
-            bottom: 20px;       /* تھوڑا نیچے کیا ہے */
-            width: 30px;        /* پہلے 60px تھا، اب 30px (آدھا) */
-            height: 30px;       /* پہلے 60px تھا، اب 30px (آدھا) */
+            bottom: 20px;
+            width: 30px;        /* Small Size */
+            height: 30px;
             background: rgba(255, 255, 255, 0.15); 
             color: #00ff00;
-            border: 1px solid #00ff00; /* بارڈر بھی باریک کیا ہے */
+            border: 1px solid #00ff00;
             border-radius: 50%;
-            font-size: 16px;    /* فونٹ بھی چھوٹا کیا ہے */
+            font-size: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -43,11 +51,9 @@
             background: rgba(0, 255, 0, 0.4);
         }
 
-        /* Positions */
         #btn-minus { left: 15px; }
         #btn-plus { right: 15px; }
 
-        /* Toast Notification */
         #toast {
             visibility: hidden;
             min-width: 200px;
@@ -80,11 +86,9 @@
 <body>
 
     <div id="btn-minus" class="float-btn" onclick="changeFontSize(-2)">−</div>
-
     <div id="btn-plus" class="float-btn" onclick="changeFontSize(2)">+</div>
 
     <div id="terminal"></div>
-
     <div id="toast">✅ Text Copied!</div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -109,7 +113,6 @@
         term.open(document.getElementById('terminal'));
         fitAddon.fit();
 
-        // Zoom Logic
         function changeFontSize(amount) {
             currentFontSize += amount;
             if (currentFontSize < 6) currentFontSize = 6;
@@ -119,7 +122,6 @@
             socket.emit('resize', { cols: term.cols, rows: term.rows });
         }
 
-        // Long Press Copy Logic
         let pressTimer;
         const terminalDiv = document.getElementById('terminal');
 
@@ -149,7 +151,6 @@
             setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
         }
 
-        // Socket Logic
         term.onData(data => socket.emit('input', data));
         socket.on('output', data => term.write(data));
 
