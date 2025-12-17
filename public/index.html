@@ -10,30 +10,25 @@
     <link rel="apple-touch-icon" href="/icon.png">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
     <style>
         body { 
             margin: 0; 
             background: #000; 
-            height: 100vh;
-            overflow: hidden;
+            height: 100vh; 
+            overflow: hidden; 
             touch-action: none; 
         }
         
-        #terminal { 
-            width: 100%; 
-            height: 100%; 
-        }
+        #terminal { width: 100%; height: 100%; }
 
-        /* SMALL Buttons (30px) */
+        /* Floating Buttons Style */
         .float-btn {
             position: fixed;
-            bottom: 20px;
-            width: 30px;        /* Small Size */
-            height: 30px;
-            background: rgba(255, 255, 255, 0.15); 
+            width: 35px;
+            height: 35px;
+            background: rgba(0, 0, 0, 0.6); 
             color: #00ff00;
             border: 1px solid #00ff00;
             border-radius: 50%;
@@ -44,52 +39,50 @@
             cursor: pointer;
             z-index: 1000;
             user-select: none;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(4px);
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
         }
 
-        .float-btn:active {
-            background: rgba(0, 255, 0, 0.4);
-        }
+        .float-btn:active { background: rgba(0, 255, 0, 0.4); color: #000; }
 
-        #btn-minus { left: 15px; }
-        #btn-plus { right: 15px; }
+        /* --- RIGHT SIDE (Zoom In & Copy) --- */
+        #btn-plus { right: 15px; bottom: 20px; }
+        #btn-copy { right: 15px; bottom: 70px; } /* Above Plus */
 
+        /* --- LEFT SIDE (Zoom Out & Paste) --- */
+        #btn-minus { left: 15px; bottom: 20px; }
+        #btn-paste { left: 15px; bottom: 70px; } /* Above Minus */
+
+        /* Toast Notification */
         #toast {
             visibility: hidden;
             min-width: 200px;
             background-color: #333;
             color: #fff;
             text-align: center;
-            border-radius: 2px;
+            border-radius: 5px;
             padding: 10px;
             position: fixed;
-            z-index: 1;
+            z-index: 2000;
             left: 50%;
-            bottom: 50%;
-            transform: translate(-50%, 50%);
+            top: 20px; /* Show at top now */
+            transform: translateX(-50%);
             font-size: 14px;
             border: 1px solid #00ff00;
+            font-family: monospace;
         }
 
-        #toast.show {
-            visibility: visible;
-            -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
-            animation: fadein 0.5s, fadeout 0.5s 2.5s;
-        }
-
-        @-webkit-keyframes fadein { from {bottom: 40%; opacity: 0;} to {bottom: 50%; opacity: 1;} }
-        @keyframes fadein { from {bottom: 40%; opacity: 0;} to {bottom: 50%; opacity: 1;} }
-        @-webkit-keyframes fadeout { from {bottom: 50%; opacity: 1;} to {bottom: 40%; opacity: 0;} }
-        @keyframes fadeout { from {bottom: 50%; opacity: 1;} to {bottom: 40%; opacity: 0;} }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {top: 0; opacity: 0;} to {top: 20px; opacity: 1;} }
+        @keyframes fadeout { from {top: 20px; opacity: 1;} to {top: 0; opacity: 0;} }
     </style>
 </head>
 <body>
 
     <div id="btn-minus" class="float-btn" onclick="changeFontSize(-2)">−</div>
-    <div id="btn-plus" class="float-btn" onclick="changeFontSize(2)">+</div>
-
-    <div id="terminal"></div>
-    <div id="toast">✅ Text Copied!</div>
+    <div id="btn-paste" class="float-btn" onclick="pasteText()">📋</div> <div id="btn-plus" class="float-btn" onclick="changeFontSize(2)">+</div>
+    <div id="btn-copy" class="float-btn" onclick="copyAll()">📑</div> <div id="terminal"></div>
+    <div id="toast">✅ Action Successful</div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
@@ -113,6 +106,7 @@
         term.open(document.getElementById('terminal'));
         fitAddon.fit();
 
+        // 1. ZOOM LOGIC
         function changeFontSize(amount) {
             currentFontSize += amount;
             if (currentFontSize < 6) currentFontSize = 6;
@@ -122,35 +116,39 @@
             socket.emit('resize', { cols: term.cols, rows: term.rows });
         }
 
-        let pressTimer;
-        const terminalDiv = document.getElementById('terminal');
-
-        terminalDiv.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                pressTimer = setTimeout(() => {
-                    copyAll();
-                }, 800);
-            }
-        });
-
-        terminalDiv.addEventListener('touchend', () => clearTimeout(pressTimer));
-        terminalDiv.addEventListener('touchmove', () => clearTimeout(pressTimer));
-
+        // 2. COPY LOGIC (Right Top Button)
         function copyAll() {
             term.selectAll();
             const text = term.getSelection();
             navigator.clipboard.writeText(text).then(() => {
-                showToast();
                 term.clearSelection();
-            }).catch(err => console.error('Copy failed', err));
+                showToast("✅ All Text Copied!");
+            }).catch(err => showToast("❌ Copy Failed"));
         }
 
-        function showToast() {
+        // 3. PASTE LOGIC (Left Top Button)
+        async function pasteText() {
+            try {
+                // Browser will ask for permission first time
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    socket.emit('input', text); // Send directly to server
+                    showToast("✅ Text Pasted!");
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("⚠️ Permission Denied / Empty");
+            }
+        }
+
+        function showToast(msg) {
             var x = document.getElementById("toast");
+            x.innerText = msg;
             x.className = "show";
             setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
         }
 
+        // Socket & Resize
         term.onData(data => socket.emit('input', data));
         socket.on('output', data => term.write(data));
 
